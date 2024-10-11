@@ -1,5 +1,7 @@
 package ua.lastbite.email_service.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +18,8 @@ public class EmailController {
 
     private final EmailService emailService;
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmailController.class);
+
     @Autowired
     public EmailController(EmailService emailService) {
         this.emailService = emailService;
@@ -24,6 +28,7 @@ public class EmailController {
 
     @PostMapping("/send")
     public ResponseEntity<String> sendEmail(@RequestBody EmailRequest request) {
+        LOGGER.info("Received request to send email to: {}", request.getToEmail());
         emailService.sendSimpleEmail(request);
 
         return ResponseEntity.ok("Email sent successfully");
@@ -31,6 +36,7 @@ public class EmailController {
 
     @PostMapping("/send-verification")
     public ResponseEntity<String> sendVerificationEmail(@RequestBody EmailVerificationRequest request) {
+        LOGGER.info("Received an email verification request to email: {}", request.getToEmail());
         emailService.sendVerificationEmail(request);
 
         return ResponseEntity.ok("Email Verification sent successfully");
