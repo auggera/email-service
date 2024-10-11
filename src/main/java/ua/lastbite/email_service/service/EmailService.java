@@ -14,13 +14,18 @@ import ua.lastbite.email_service.dto.EmailVerificationRequest;
 @Service
 public class EmailService {
 
-    @Autowired
-    private JavaMailSender mailSender;
 
-    @Value("${}")
+    private final JavaMailSender mailSender;
+
+    @Value("${EMAIL_SERVICE_}")
     private String verificationBaseUrl;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailService.class);
+
+    @Autowired
+    public EmailService(JavaMailSender mailSender) {
+        this.mailSender = mailSender;
+    }
 
     @Async
     public void sendSimpleEmail(EmailRequest request) {
@@ -34,6 +39,7 @@ public class EmailService {
     }
 
     public void sendVerificationEmail(EmailVerificationRequest request) {
+        LOGGER.info("Processing email verification request.");
         String subject = "Email Verification";
         String verificationUrl = verificationBaseUrl + "/api/users/verify-email?token=" + request.getToken();
         String body = "Please click the following link to verify your email: " + verificationUrl;
