@@ -14,8 +14,13 @@ import ua.lastbite.email_service.service.EmailService;
 @RequestMapping("/api/emails")
 public class EmailController {
 
+    private final EmailService emailService;
+
     @Autowired
-    EmailService emailService;
+    public EmailController(EmailService emailService) {
+        this.emailService = emailService;
+    }
+
 
     @PostMapping("/send")
     public ResponseEntity<String> sendEmail(@RequestBody EmailRequest request) {
