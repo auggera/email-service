@@ -14,7 +14,7 @@ public class TokenServiceClient {
 
     private final RestTemplate restTemplate;
 
-    @Value("${TOKEN_SERVICE_URL}")
+    @Value("${token-service.url}")
     private String tokenServiceUrl;
 
     @Autowired
