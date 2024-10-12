@@ -7,6 +7,7 @@ import lombok.*;
 @Setter
 @Getter
 @EqualsAndHashCode
+@ToString
 public class UserEmailResponseDto {
     private String email;
     private boolean verified;
