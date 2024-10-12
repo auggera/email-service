@@ -1,4 +1,4 @@
-package ua.lastbite.email_service.dto;
+package ua.lastbite.email_service.dto.email;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -7,6 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @Getter
 @Setter
+@EqualsAndHashCode
 public class EmailRequest {
 
     @NotBlank

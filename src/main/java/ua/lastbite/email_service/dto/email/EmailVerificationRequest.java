@@ -1,15 +1,14 @@
-package ua.lastbite.email_service.dto;
+package ua.lastbite.email_service.dto.email;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
+@EqualsAndHashCode
 public class EmailVerificationRequest {
 
     @NotBlank(message = "Email cannot be empty")
@@ -17,4 +16,7 @@ public class EmailVerificationRequest {
 
     @NotBlank(message = "token cannot be empty")
     private String token;
+
+    @NotNull(message = "User ID cannot be empty")
+    private Integer userId;
 }
