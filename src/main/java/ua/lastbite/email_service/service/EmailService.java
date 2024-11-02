@@ -44,16 +44,20 @@ public class EmailService {
     @Async
     public void sendSimpleEmail(EmailRequest request) {
         try {
+
             LOGGER.info("Sending email to {}", request.getToEmail());
+
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(request.getToEmail());
             message.setSubject(request.getSubject());
             message.setText(request.getBody());
+
             mailSender.send(message);
             LOGGER.info("Email sent successfully to {}", request.getToEmail());
+
         } catch (MailException ex) {
             LOGGER.error("Failed to send email to {}: {}", request.getToEmail(), ex.getMessage());
-            throw new EmailSendingFailedException("Failed to send email to " + request.getToEmail());
+            throw new EmailSendingFailedException(request.getToEmail());
         }
     }
 
