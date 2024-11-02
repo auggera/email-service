@@ -24,7 +24,7 @@ public class EmailController {
     }
 
     @PostMapping("/send")
-    public ResponseEntity<String> sendEmail(@RequestBody EmailRequest request) {
+    public ResponseEntity<String> sendEmail(@Valid @RequestBody EmailRequest request) {
         LOGGER.info("Received request to send email to: {}", request.getToEmail());
         emailService.sendSimpleEmail(request);
 
@@ -32,7 +32,7 @@ public class EmailController {
     }
 
     @PostMapping("/send-verification")
-    public ResponseEntity<String> sendVerificationEmail(@RequestBody EmailVerificationRequest request) {
+    public ResponseEntity<String> sendVerificationEmail(@Valid @RequestBody EmailVerificationRequest request) {
         LOGGER.info("Received an email verification request for user ID: {}", request.getUserId());
         emailService.sendVerificationEmail(request);
 
