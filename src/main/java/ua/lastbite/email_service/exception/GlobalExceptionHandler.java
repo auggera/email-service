@@ -11,10 +11,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.NoHandlerFoundException;
-import ua.lastbite.email_service.exception.token.InvalidTokenException;
-import ua.lastbite.email_service.exception.token.TokenAlreadyUsedException;
-import ua.lastbite.email_service.exception.token.TokenExpiredException;
-import ua.lastbite.email_service.exception.token.TokenNotFoundException;
+import ua.lastbite.email_service.exception.token.*;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -49,6 +46,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleTokenNotFound(TokenNotFoundException ex) {
         LOGGER.error("Handled TokenNotFoundException: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(TokenGenerationException.class)
+    public ResponseEntity<String> handleTokenGenerationException(TokenGenerationException ex) {
+        LOGGER.error("Token generation failed: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
     }
 
     @ExceptionHandler(InvalidTokenException.class)
