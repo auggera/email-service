@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: email-service
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL_SERVICE_EMAIL_USERNAME}
+    password: ${EMAIL_SERVICE_EMAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.debug: true
+
+app:
+  verification:
+    base-url: ${EMAIL_SERVICE_VERIFICATION_BASE_URL}
+    verify-url: ${EMAIL_SERVICE_VERIFICATION_VERIFY_URL}
+
+server:
+  port: 8081
+
+token-service:
+  url: ${TOKEN_SERVICE_URL}
+
+user-service:
+  url: ${USER_SERVICE_URL}
