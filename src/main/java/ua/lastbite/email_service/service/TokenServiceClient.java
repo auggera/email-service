@@ -53,13 +53,13 @@ public class TokenServiceClient {
             return restTemplate.postForObject(urlRequest, request, TokenValidationResponse.class);
         } catch (HttpClientErrorException.NotFound e) {
             LOGGER.error("Token not found for request: {}", request.getTokenValue());
-            throw new TokenNotFoundException("Token not found: " + request.getTokenValue());
+            throw new TokenNotFoundException(request.getTokenValue());
         } catch (HttpClientErrorException.Gone e) {
             LOGGER.error("Token expired for request: {}", request.getTokenValue());
-            throw new TokenExpiredException("Token expired: " + request.getTokenValue());
+            throw new TokenExpiredException(request.getTokenValue());
         } catch (HttpClientErrorException.Conflict e) {
             LOGGER.error("Token already used for request: {}", request.getTokenValue());
-            throw new TokenAlreadyUsedException("Token already used: " + request.getTokenValue());
+            throw new TokenAlreadyUsedException(request.getTokenValue());
         } catch (HttpServerErrorException e) {
             LOGGER.error("Service unavailable for token validation request: {}", request.getTokenValue(), e);
             throw new ServiceUnavailableException("Token service is currently unavailable");
