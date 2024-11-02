@@ -21,7 +21,7 @@ public class UserServiceClient {
 
     private final RestTemplate restTemplate;
 
-    @Value("${token-service.url}")
+    @Value("${user-service.url}")
     private String userServiceUrl;
 
     public UserServiceClient(RestTemplate restTemplate) {
