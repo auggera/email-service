@@ -13,13 +13,14 @@ import org.springframework.stereotype.Service;
 import ua.lastbite.email_service.dto.email.EmailRequest;
 import ua.lastbite.email_service.dto.email.EmailVerificationRequest;
 import ua.lastbite.email_service.dto.token.TokenRequest;
+import ua.lastbite.email_service.dto.token.TokenValidationRequest;
+import ua.lastbite.email_service.dto.token.TokenValidationResponse;
 import ua.lastbite.email_service.dto.user.UserEmailResponseDto;
 import ua.lastbite.email_service.exception.EmailAlreadyVerifiedException;
 import ua.lastbite.email_service.exception.EmailSendingFailedException;
 
 @Service
 public class EmailService {
-
 
     private final JavaMailSender mailSender;
     private final TokenServiceClient tokenServiceClient;
@@ -59,8 +60,10 @@ public class EmailService {
     public void sendVerificationEmail(EmailVerificationRequest request) {
         LOGGER.info("Processing email verification request.");
 
+        LOGGER.info("Requesting user information.");
         UserEmailResponseDto responseDto = userServiceClient.getEmailInfoByUserId(request.getUserId());
         if (responseDto.isVerified()) {
+            LOGGER.error("Email {} is already verified.", responseDto.getEmail());
             throw new EmailAlreadyVerifiedException();
         }
 
@@ -72,6 +75,16 @@ public class EmailService {
         String verificationUrl = verificationBaseUrl + verificationVerifyUrl + "?token=" + tokenValue;
         String body = "Please click the following link to verify your email: " + verificationUrl;
 
-        sendSimpleEmail(new EmailRequest(request.getToEmail(), subject, body));
+        sendSimpleEmail(new EmailRequest(responseDto.getEmail(), subject, body));
+    }
+
+    public void verifyEmail(TokenValidationRequest request) {
+        LOGGER.info("Starting email verification process for token: {}", request.getTokenValue());
+
+        TokenValidationResponse response = tokenServiceClient.verifyToken(request);
+        LOGGER.info("Token validated successfully for user ID: {}", response.getUserId());
+
+        userServiceClient.markEmailAsVerified(response.getUserId());
+        LOGGER.info("Email verification status updated successfully for user ID: {}", response.getUserId());
     }
 }
