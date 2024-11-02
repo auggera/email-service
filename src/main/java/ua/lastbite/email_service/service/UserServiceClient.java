@@ -8,6 +8,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 import ua.lastbite.email_service.dto.user.UserEmailResponseDto;
 import ua.lastbite.email_service.exception.ServiceUnavailableException;
 import ua.lastbite.email_service.exception.UserNotFoundException;
@@ -27,26 +28,51 @@ public class UserServiceClient {
         this.restTemplate = restTemplate;
     }
 
-    public UserEmailResponseDto getEmailInfoByUserId(Integer id) {
-        String url = userServiceUrl + "/api/email/" + id + "/info";
+    public UserEmailResponseDto getEmailInfoByUserId(Integer userId) {
+
+        String url = UriComponentsBuilder.fromHttpUrl(userServiceUrl)
+                .path("/api/email/{userId}/info")
+                .buildAndExpand(userId)
+                .toUriString();
 
         try {
-            LOGGER.info("Requesting info from user with ID: {}", id);
-            UserEmailResponseDto responseDto =  restTemplate.getForObject(url, UserEmailResponseDto.class);
+            LOGGER.info("Requesting email information for user ID: {}", userId);
+            UserEmailResponseDto responseDto = restTemplate.getForObject(url, UserEmailResponseDto.class);
 
             if (responseDto == null) {
-                LOGGER.error("Empty response received from user-service for ID: {}", id);
+                LOGGER.warn("Received empty response from user-service for user ID: {}", userId);
                 throw new ServiceUnavailableException("Received empty response from user-service");
             }
 
-            LOGGER.debug("User data retrieved: {}", responseDto);
+            LOGGER.debug("Email information retrieved: {}", responseDto);
             return responseDto;
         } catch (HttpClientErrorException.NotFound e) {
-            LOGGER.error("User not found with ID: {}", id);
-            throw new UserNotFoundException(id);
+            LOGGER.error("User not found with ID: {}", userId);
+            throw new UserNotFoundException(userId);
         } catch (RestClientException e) {
-            LOGGER.error("Error occurred while calling user-service for ID: {}", id, e);
-            throw new ServiceUnavailableException("Failed to communicate with user-service");
+            LOGGER.error("Error occurred while retrieving email info from user-service for user ID: {}", userId, e);
+            throw new ServiceUnavailableException("Failed to retrieve email info from user-service");
+        }
+    }
+
+    public void markEmailAsVerified(Integer userId) {
+
+        LOGGER.info("Initiating request to mark email as verified for user ID: {}", userId);
+
+        String url = UriComponentsBuilder.fromHttpUrl(userServiceUrl)
+                .path("/api/email/{userId}/verify-email")
+                .buildAndExpand(userId)
+                .toUriString();
+
+        try {
+            restTemplate.put(url, null);
+            LOGGER.info("Successfully marked email as verified for user ID: {}", userId);
+        } catch (HttpClientErrorException.NotFound e) {
+            LOGGER.error("Failed to mark email as verified: user not found with ID: {}", userId);
+            throw new UserNotFoundException(userId);
+        } catch (RestClientException e) {
+            LOGGER.error("Error while marking email as verified in user-service for user ID: {}", userId, e);
+            throw new ServiceUnavailableException("Failed to mark email as verified in user-service");
         }
     }
 }
