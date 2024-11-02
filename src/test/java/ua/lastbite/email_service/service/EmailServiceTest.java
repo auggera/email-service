@@ -18,6 +18,7 @@ import ua.lastbite.email_service.dto.token.TokenRequest;
 import ua.lastbite.email_service.dto.token.TokenValidationRequest;
 import ua.lastbite.email_service.dto.token.TokenValidationResponse;
 import ua.lastbite.email_service.dto.user.UserEmailResponseDto;
+import ua.lastbite.email_service.exception.EmailAlreadyVerifiedException;
 import ua.lastbite.email_service.exception.EmailSendingFailedException;
 import ua.lastbite.email_service.exception.ServiceUnavailableException;
 import ua.lastbite.email_service.exception.UserNotFoundException;
@@ -196,11 +197,6 @@ public class EmailServiceTest {
     @Test
     void sendVerificationEmailSuccess() {
 
-    }
-
-    @Test
-    void sendVerificationEmail_Successful() {
-
         Mockito.when(userServiceClient.getEmailInfoByUserId(USER_ID)).thenReturn(userEmailResponseDto);
         Mockito.when(tokenServiceClient.generateToken(new TokenRequest(USER_ID))).thenReturn(TOKEN);
 
@@ -220,7 +216,7 @@ public class EmailServiceTest {
     }
 
     @Test
-    void sendVerificationEmail_TokenGenerationFailed() {
+    void sendVerificationEmailFailed() {
 
         Mockito.when(userServiceClient.getEmailInfoByUserId(USER_ID)).thenReturn(userEmailResponseDto);
         Mockito.doThrow(new TokenGenerationException("Failed to generate token")).when(tokenServiceClient).generateToken(Mockito.any());
@@ -230,6 +226,39 @@ public class EmailServiceTest {
 
         assertEquals("Failed to generate token", exception.getMessage());
         Mockito.verify(userServiceClient, Mockito.times(1)).getEmailInfoByUserId(USER_ID);
+        Mockito.verify(mailSender, Mockito.never()).send(Mockito.any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void sendVerificationEmailIsAlreadyUsed() {
+
+        userEmailResponseDto.setVerified(true);
+
+        Mockito.when(userServiceClient.getEmailInfoByUserId(USER_ID)).thenReturn(userEmailResponseDto);
+
+        EmailAlreadyVerifiedException exception = assertThrows(EmailAlreadyVerifiedException.class, () -> emailService.sendVerificationEmail(emailVerificationRequest));
+
+        assertEquals("Email already verified", exception.getMessage());
+
+        Mockito.verify(userServiceClient, Mockito.times(1)).getEmailInfoByUserId(USER_ID);
+        Mockito.verify(mailSender, Mockito.never()).send(Mockito.any(SimpleMailMessage.class));
+        Mockito.verify(tokenServiceClient, Mockito.never()).generateToken(Mockito.any());
+    }
+
+    @Test
+    void sendVerificationEmailTokenGenerationFailed() {
+
+        Mockito.when(userServiceClient.getEmailInfoByUserId(USER_ID)).thenReturn(userEmailResponseDto);
+
+        Mockito.when(tokenServiceClient.generateToken(new TokenRequest(USER_ID)))
+                .thenThrow(new TokenGenerationException("Failed to generate token"));
+
+        TokenGenerationException exception = assertThrows(TokenGenerationException.class, () -> emailService.sendVerificationEmail(emailVerificationRequest));
+
+        assertEquals("Failed to generate token", exception.getMessage());
+
+        Mockito.verify(userServiceClient, Mockito.times(1)).getEmailInfoByUserId(USER_ID);
+        Mockito.verify(tokenServiceClient, Mockito.times(1)).generateToken(Mockito.any());
         Mockito.verify(mailSender, Mockito.never()).send(Mockito.any(SimpleMailMessage.class));
     }
 }
