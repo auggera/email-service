@@ -19,6 +19,8 @@ import ua.lastbite.email_service.dto.user.UserEmailResponseDto;
 import ua.lastbite.email_service.exception.EmailAlreadyVerifiedException;
 import ua.lastbite.email_service.exception.EmailSendingFailedException;
 
+import java.util.concurrent.CompletableFuture;
+
 @Service
 public class EmailService {
 
@@ -42,24 +44,24 @@ public class EmailService {
     }
 
     @Async
-    public void sendSimpleEmail(EmailRequest request) {
-        try {
+    public CompletableFuture<Void> sendSimpleEmail(EmailRequest request) {
+
+        return CompletableFuture.runAsync(() -> {
 
             LOGGER.info("Sending email to {}", request.getToEmail());
-
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(request.getToEmail());
             message.setSubject(request.getSubject());
             message.setText(request.getBody());
-
             mailSender.send(message);
             LOGGER.info("Email sent successfully to {}", request.getToEmail());
 
-        } catch (MailException ex) {
-            LOGGER.error("Failed to send email to {}: {}", request.getToEmail(), ex.getMessage());
-            throw new EmailSendingFailedException(request.getToEmail());
-        }
+        }).exceptionally(ex -> {
+            LOGGER.error("Failed to send email: {}", ex.getMessage());
+            throw new EmailSendingFailedException("Failed to send email to " + request.getToEmail());
+        }).thenApply(v -> null);
     }
+
 
     public void sendVerificationEmail(EmailVerificationRequest request) {
         LOGGER.info("Processing email verification request.");
