@@ -16,6 +16,7 @@ import ua.lastbite.email_service.exception.token.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -120,6 +121,19 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleIllegalArgument(IllegalArgumentException ex) {
         LOGGER.error("Handled IllegalArgumentException: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(CompletionException.class)
+    public ResponseEntity<String> handleCompletionException(CompletionException ex) {
+        Throwable cause = ex.getCause();
+
+        if (cause instanceof EmailSendingFailedException) {
+            LOGGER.error("Email sending failed: {}", cause.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(cause.getMessage());
+        }
+
+        LOGGER.error("Handled CompletionException: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while processing your request");
     }
 
     @ExceptionHandler(Throwable.class)
