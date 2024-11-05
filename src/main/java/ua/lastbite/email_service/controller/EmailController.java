@@ -11,8 +11,8 @@ import ua.lastbite.email_service.dto.email.EmailVerificationRequest;
 import ua.lastbite.email_service.dto.token.TokenValidationRequest;
 import ua.lastbite.email_service.service.EmailService;
 
-import java.util.Comparator;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/emails")
@@ -27,11 +27,15 @@ public class EmailController {
     }
 
     @PostMapping("/send")
-    public CompletableFuture<ResponseEntity<String>> sendEmail(@Valid @RequestBody EmailRequest request) {
+    public ResponseEntity<String> sendEmail(@Valid @RequestBody EmailRequest request) {
         LOGGER.info("Received request to send email to: {}", request.getToEmail());
-
-        return emailService.sendSimpleEmail(request)
-                .thenApply(voidResult -> ResponseEntity.ok("Email sent successfully"));
+        try {
+            emailService.sendSimpleEmail(request).get();
+            return ResponseEntity.ok("Email sent successfully");
+        } catch (InterruptedException | ExecutionException ex) {
+            LOGGER.error("Failed to send email: {}", ex.getMessage());
+            throw new CompletionException(ex);
+        }
     }
 
     @PostMapping("/send-verification")
