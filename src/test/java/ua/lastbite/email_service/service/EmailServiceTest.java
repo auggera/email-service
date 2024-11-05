@@ -12,22 +12,16 @@ import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.ActiveProfiles;
-import ua.lastbite.email_service.dto.email.EmailRequest;
-import ua.lastbite.email_service.dto.email.EmailVerificationRequest;
-import ua.lastbite.email_service.dto.token.TokenRequest;
-import ua.lastbite.email_service.dto.token.TokenValidationRequest;
-import ua.lastbite.email_service.dto.token.TokenValidationResponse;
+import ua.lastbite.email_service.dto.email.*;
+import ua.lastbite.email_service.dto.token.*;
 import ua.lastbite.email_service.dto.user.UserEmailResponseDto;
-import ua.lastbite.email_service.exception.EmailAlreadyVerifiedException;
-import ua.lastbite.email_service.exception.EmailSendingFailedException;
-import ua.lastbite.email_service.exception.ServiceUnavailableException;
-import ua.lastbite.email_service.exception.UserNotFoundException;
-import ua.lastbite.email_service.exception.token.TokenAlreadyUsedException;
-import ua.lastbite.email_service.exception.token.TokenExpiredException;
-import ua.lastbite.email_service.exception.token.TokenGenerationException;
-import ua.lastbite.email_service.exception.token.TokenNotFoundException;
+import ua.lastbite.email_service.exception.*;
+import ua.lastbite.email_service.exception.token.*;
+
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -170,14 +164,15 @@ public class EmailServiceTest {
     }
 
     @Test
-    void sendSimpleEmailSuccessfulSend() {
+    void sendSimpleEmailSuccessfulSend() throws Exception {
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(emailRequest.getToEmail());
         message.setSubject(emailRequest.getSubject());
         message.setText(emailRequest.getBody());
 
-        emailService.sendSimpleEmail(emailRequest);
+        CompletableFuture<Void> future = emailService.sendSimpleEmail(emailRequest);
+        future.get();
 
         Mockito.verify(mailSender, Mockito.times(1)).send(Mockito.any(SimpleMailMessage.class));
     }
@@ -188,10 +183,12 @@ public class EmailServiceTest {
         Mockito.doThrow(new MailException("Failed to send email") {}).when(mailSender)
                 .send(Mockito.any(SimpleMailMessage.class));
 
-        EmailSendingFailedException exception = assertThrows(EmailSendingFailedException.class,
-                () -> emailService.sendSimpleEmail(emailRequest));
+        CompletionException exception = assertThrows(CompletionException .class,
+                () -> emailService.sendSimpleEmail(emailRequest).join());
 
-        assertEquals("Failed to send email to recipient@example.com", exception.getMessage());
+        Throwable cause = exception.getCause();
+        assertInstanceOf(EmailSendingFailedException.class, cause);
+        assertTrue(cause.getMessage().contains("Failed to send email to recipient@example.com"));
     }
 
     @Test
