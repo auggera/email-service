@@ -10,12 +10,12 @@ import lombok.*;
 @EqualsAndHashCode
 public class EmailRequest {
 
-    @NotBlank
+    @NotBlank(message = "Email cannot be empty")
     private String toEmail;
 
-    @NotBlank
+    @NotBlank(message = "Subject cannot be empty")
     private String subject;
 
-    @NotBlank
+    @NotBlank(message = "Body cannot be empty")
     private String body;
 }
