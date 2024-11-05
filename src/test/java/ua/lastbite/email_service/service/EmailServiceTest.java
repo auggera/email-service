@@ -21,6 +21,7 @@ import ua.lastbite.email_service.exception.token.*;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -192,7 +193,7 @@ public class EmailServiceTest {
     }
 
     @Test
-    void sendVerificationEmailSuccess() {
+    void sendVerificationEmailSuccess() throws Exception {
 
         Mockito.when(userServiceClient.getEmailInfoByUserId(USER_ID)).thenReturn(userEmailResponseDto);
         Mockito.when(tokenServiceClient.generateToken(new TokenRequest(USER_ID))).thenReturn(TOKEN);
@@ -200,7 +201,8 @@ public class EmailServiceTest {
         String expectedVerificationUrl = verificationBaseUrl + verificationVerifyUrl + "?token=" + TOKEN;
         String expectedBody = "Please click the following link to verify your email: " + expectedVerificationUrl;
 
-        emailService.sendVerificationEmail(emailVerificationRequest);
+        CompletableFuture<Void> future = emailService.sendVerificationEmail(emailVerificationRequest);
+        future.get();
 
         Mockito.verify(userServiceClient, Mockito.times(1)).getEmailInfoByUserId(USER_ID);
         Mockito.verify(tokenServiceClient, Mockito.times(1)).generateToken(new TokenRequest(USER_ID));
