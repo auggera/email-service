@@ -33,7 +33,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
     }
 
-
     @ExceptionHandler(EmailSendingFailedException.class)
     public ResponseEntity<String> handleEmailSendingFailedException(EmailSendingFailedException ex) {
         LOGGER.error("Email sending failed: {}", ex.getMessage());
@@ -115,7 +114,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ServiceUnavailableException.class)
     public ResponseEntity<String> handleServiceUnavailableException(ServiceUnavailableException ex) {
         LOGGER.error("Service unavailable: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -126,12 +125,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({CompletionException.class, ExecutionException.class})
     public ResponseEntity<String> handleAsyncExceptions(Throwable ex) {
-        Throwable cause = ex.getCause();
+        Throwable rootCause = ex;
 
-        if (cause instanceof ExecutionException executionCause && executionCause.getCause() instanceof EmailSendingFailedException emailCause) {
-            LOGGER.error("Email sending failed: {}", emailCause.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(emailCause.getMessage());
-        } else if (cause instanceof EmailSendingFailedException emailCause) {
+        while (rootCause.getCause() != null) {
+            rootCause = rootCause.getCause();
+        }
+
+        if (rootCause instanceof EmailSendingFailedException emailCause) {
             LOGGER.error("Email sending failed: {}", emailCause.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(emailCause.getMessage());
         }
