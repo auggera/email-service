@@ -17,11 +17,11 @@ app:
     base-url: ${EMAIL_SERVICE_VERIFICATION_BASE_URL}
     verify-url: ${EMAIL_SERVICE_VERIFICATION_VERIFY_URL}
 
-server:
-  port: 8081
-
 token-service:
   url: ${TOKEN_SERVICE_URL}
 
 user-service:
   url: ${USER_SERVICE_URL}
+
+server:
+  port: 8081
