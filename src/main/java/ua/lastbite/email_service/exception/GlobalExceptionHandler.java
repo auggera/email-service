@@ -17,6 +17,7 @@ import ua.lastbite.email_service.exception.token.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -123,17 +124,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
-    @ExceptionHandler(CompletionException.class)
-    public ResponseEntity<String> handleCompletionException(CompletionException ex) {
+    @ExceptionHandler({CompletionException.class, ExecutionException.class})
+    public ResponseEntity<String> handleAsyncExceptions(Throwable ex) {
         Throwable cause = ex.getCause();
 
-        if (cause instanceof EmailSendingFailedException) {
-            LOGGER.error("Email sending failed: {}", cause.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(cause.getMessage());
+        if (cause instanceof ExecutionException executionCause && executionCause.getCause() instanceof EmailSendingFailedException emailCause) {
+            LOGGER.error("Email sending failed: {}", emailCause.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(emailCause.getMessage());
+        } else if (cause instanceof EmailSendingFailedException emailCause) {
+            LOGGER.error("Email sending failed: {}", emailCause.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(emailCause.getMessage());
         }
 
-        LOGGER.error("Handled CompletionException: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while processing your request");
+        LOGGER.error("Async error occurred: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("An error occurred while processing your request");
     }
 
     @ExceptionHandler(Throwable.class)
