@@ -60,7 +60,8 @@ public class EmailService {
         }).thenApply(v -> null);
     }
 
-    public void sendVerificationEmail(EmailVerificationRequest request) {
+    @Async
+    public CompletableFuture<Void> sendVerificationEmail(EmailVerificationRequest request) {
         LOGGER.info("Processing email verification request.");
 
         LOGGER.info("Requesting user information.");
@@ -78,7 +79,12 @@ public class EmailService {
         String verificationUrl = verificationBaseUrl + verificationVerifyUrl + "?token=" + tokenValue;
         String body = "Please click the following link to verify your email: " + verificationUrl;
 
-        sendSimpleEmail(new EmailRequest(responseDto.getEmail(), subject, body));
+        return sendSimpleEmail(new EmailRequest(responseDto.getEmail(), subject, body))
+
+                .exceptionally(ex -> {
+                    LOGGER.error("Failed to send verification email: {}", ex.getMessage());
+                    throw new EmailSendingFailedException(responseDto.getEmail());
+                }).thenApply(v -> null);
     }
 
     public void verifyEmail(TokenValidationRequest request) {

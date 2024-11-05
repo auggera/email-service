@@ -60,7 +60,6 @@ public class EmailControllerIntegrationTest {
     private TokenValidationRequest tokenValidationRequest;
     private TokenValidationResponse tokenValidationResponse;
 
-
     @BeforeEach
     void setUp() {
         emailRequest = new EmailRequest(EMAIL, "Test Subject", "Test Body");
@@ -77,8 +76,8 @@ public class EmailControllerIntegrationTest {
                 .when(mailSender).send(Mockito.any(SimpleMailMessage.class));
 
         mockMvc.perform(post("/api/emails/send")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(emailRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(emailRequest)))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Email sent successfully"));
 
@@ -105,7 +104,8 @@ public class EmailControllerIntegrationTest {
 
     @Test
     void testSendEmail_FailureDueToMailException() throws Exception {
-        Mockito.doThrow(new EmailSendingFailedException(emailRequest.getToEmail()) {})
+        Mockito.doThrow(new EmailSendingFailedException(emailRequest.getToEmail()) {
+                })
                 .when(mailSender).send(Mockito.any(SimpleMailMessage.class));
 
         mockMvc.perform(post("/api/emails/send")
@@ -126,8 +126,8 @@ public class EmailControllerIntegrationTest {
                 .when(tokenServiceClient).generateToken(new TokenRequest(USER_ID));
 
         mockMvc.perform(post("/api/emails/send-verification")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(emailVerificationRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(emailVerificationRequest)))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Email Verification sent successfully"));
 
@@ -147,8 +147,8 @@ public class EmailControllerIntegrationTest {
                 .when(tokenServiceClient).generateToken(new TokenRequest(USER_ID));
 
         mockMvc.perform(post("/api/emails/send-verification")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(emailVerificationRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(emailVerificationRequest)))
                 .andExpect(status().isConflict())
                 .andExpect(content().string("Email already verified"));
 
@@ -166,8 +166,8 @@ public class EmailControllerIntegrationTest {
                 .when(tokenServiceClient).generateToken(new TokenRequest(USER_ID));
 
         mockMvc.perform(post("/api/emails/send-verification")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(emailVerificationRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(emailVerificationRequest)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("Failed to generate token"));
 
@@ -177,6 +177,29 @@ public class EmailControllerIntegrationTest {
     }
 
     @Test
+    void testSendVerificationEmail_MailSendingFailed() throws Exception {
+        Mockito.doReturn(userEmailResponseDto)
+                .when(userServiceClient).getEmailInfoByUserId(USER_ID);
+
+        Mockito.doReturn(TOKEN)
+                .when(tokenServiceClient).generateToken(new TokenRequest(USER_ID));
+
+        Mockito.doThrow(new EmailSendingFailedException(EMAIL))
+                .when(mailSender).send(Mockito.any(SimpleMailMessage.class));
+
+        mockMvc.perform(post("/api/emails/send-verification")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(emailVerificationRequest)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string("Failed to send email to " + EMAIL));
+
+        Mockito.verify(userServiceClient, Mockito.times(1)).getEmailInfoByUserId(USER_ID);
+        Mockito.verify(tokenServiceClient, Mockito.times(1)).generateToken(Mockito.any(TokenRequest.class));
+        Mockito.verify(mailSender, Mockito.times(1)).send(Mockito.any(SimpleMailMessage.class));
+    }
+
+
+    @Test
     void verifyEmail_Success() throws Exception {
         Mockito.doReturn(tokenValidationResponse)
                 .when(tokenServiceClient).verifyToken(tokenValidationRequest);
@@ -184,8 +207,8 @@ public class EmailControllerIntegrationTest {
         Mockito.doNothing().when(userServiceClient).markEmailAsVerified(USER_ID);
 
         mockMvc.perform(post("/api/emails/verify-email")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(tokenValidationRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(tokenValidationRequest)))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Email successfully verified"));
 
@@ -202,8 +225,8 @@ public class EmailControllerIntegrationTest {
                 .when(userServiceClient).markEmailAsVerified(USER_ID);
 
         mockMvc.perform(post("/api/emails/verify-email")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(tokenValidationRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(tokenValidationRequest)))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("User with ID 1 not found"));
 
@@ -217,8 +240,8 @@ public class EmailControllerIntegrationTest {
                 .when(tokenServiceClient).verifyToken(tokenValidationRequest);
 
         mockMvc.perform(post("/api/emails/verify-email")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(tokenValidationRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(tokenValidationRequest)))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Token not found: " + TOKEN));
 
@@ -232,8 +255,8 @@ public class EmailControllerIntegrationTest {
                 .when(tokenServiceClient).verifyToken(tokenValidationRequest);
 
         mockMvc.perform(post("/api/emails/verify-email")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(tokenValidationRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(tokenValidationRequest)))
                 .andExpect(status().isGone())
                 .andExpect(content().string("Token expired: " + TOKEN));
 
@@ -247,8 +270,8 @@ public class EmailControllerIntegrationTest {
                 .when(tokenServiceClient).verifyToken(tokenValidationRequest);
 
         mockMvc.perform(post("/api/emails/verify-email")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(tokenValidationRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(tokenValidationRequest)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("Service Unavailable"));
 
@@ -265,8 +288,8 @@ public class EmailControllerIntegrationTest {
                 .when(userServiceClient).markEmailAsVerified(USER_ID);
 
         mockMvc.perform(post("/api/emails/verify-email")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(tokenValidationRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(tokenValidationRequest)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("Service Unavailable"));
 

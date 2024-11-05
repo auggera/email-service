@@ -131,9 +131,19 @@ public class GlobalExceptionHandler {
             rootCause = rootCause.getCause();
         }
 
-        if (rootCause instanceof EmailSendingFailedException emailCause) {
-            LOGGER.error("Email sending failed: {}", emailCause.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(emailCause.getMessage());
+        if (rootCause instanceof EmailSendingFailedException exception) {
+            LOGGER.error("Email sending failed: {}", exception.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getMessage());
+        }
+
+        if (rootCause instanceof TokenGenerationException exception) {
+            LOGGER.error("Token generation failed: {}", exception.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getMessage());
+        }
+
+        if (rootCause instanceof EmailAlreadyVerifiedException exception) {
+            LOGGER.error("Email already verified: {}", exception.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already verified");
         }
 
         LOGGER.error("Async error occurred: {}", ex.getMessage());

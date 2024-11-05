@@ -41,9 +41,13 @@ public class EmailController {
     @PostMapping("/send-verification")
     public ResponseEntity<String> sendVerificationEmail(@Valid @RequestBody EmailVerificationRequest request) {
         LOGGER.info("Received an email verification request for user ID: {}", request.getUserId());
-        emailService.sendVerificationEmail(request);
-
-        return ResponseEntity.ok("Email Verification sent successfully");
+        try {
+            emailService.sendVerificationEmail(request).get();
+            return ResponseEntity.ok("Email Verification sent successfully");
+        } catch (InterruptedException | ExecutionException ex) {
+            LOGGER.error("Failed to send verification email: {}", ex.getMessage());
+            throw new CompletionException(ex);
+        }
     }
 
     @PostMapping("/verify-email")

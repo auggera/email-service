@@ -18,7 +18,6 @@ import ua.lastbite.email_service.dto.user.UserEmailResponseDto;
 import ua.lastbite.email_service.exception.*;
 import ua.lastbite.email_service.exception.token.*;
 
-
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -180,10 +179,11 @@ public class EmailServiceTest {
     @Test
     void sendSimpleEmail_EmailSendingFailedException() {
 
-        Mockito.doThrow(new MailException("Failed to send email") {}).when(mailSender)
+        Mockito.doThrow(new MailException("Failed to send email") {
+                }).when(mailSender)
                 .send(Mockito.any(SimpleMailMessage.class));
 
-        CompletionException exception = assertThrows(CompletionException .class,
+        CompletionException exception = assertThrows(CompletionException.class,
                 () -> emailService.sendSimpleEmail(emailRequest).join());
 
         Throwable cause = exception.getCause();
@@ -257,5 +257,35 @@ public class EmailServiceTest {
         Mockito.verify(userServiceClient, Mockito.times(1)).getEmailInfoByUserId(USER_ID);
         Mockito.verify(tokenServiceClient, Mockito.times(1)).generateToken(Mockito.any());
         Mockito.verify(mailSender, Mockito.never()).send(Mockito.any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void sendVerificationEmailMailSendingFailed() {
+
+        Mockito.when(userServiceClient.getEmailInfoByUserId(USER_ID)).thenReturn(userEmailResponseDto);
+        Mockito.when(tokenServiceClient.generateToken(new TokenRequest(USER_ID))).thenReturn(TOKEN);
+
+        String expectedVerificationUrl = verificationBaseUrl + verificationVerifyUrl + "?token=" + TOKEN;
+        String expectedBody = "Please click the following link to verify your email: " + expectedVerificationUrl;
+
+        Mockito.doThrow(new MailException("Failed to send email") {
+                }).when(mailSender)
+                .send(Mockito.any(SimpleMailMessage.class));
+
+        CompletionException exception = assertThrows(CompletionException.class,
+                () -> emailService.sendVerificationEmail(emailVerificationRequest).join());
+
+        Throwable cause = exception.getCause();
+        assertInstanceOf(EmailSendingFailedException.class, cause);
+        assertTrue(cause.getMessage().contains("Failed to send email to " + EMAIL));
+
+        Mockito.verify(userServiceClient, Mockito.times(1)).getEmailInfoByUserId(USER_ID);
+        Mockito.verify(tokenServiceClient, Mockito.times(1)).generateToken(new TokenRequest(USER_ID));
+
+        Mockito.verify(mailSender, Mockito.times(1)).send(Mockito.argThat((SimpleMailMessage message) ->
+                Objects.requireNonNull(message.getTo())[0].equals(EMAIL) &&
+                        Objects.equals(message.getSubject(), "Email Verification") &&
+                        Objects.equals(message.getText(), expectedBody)
+        ));
     }
 }

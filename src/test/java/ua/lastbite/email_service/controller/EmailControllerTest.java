@@ -29,7 +29,6 @@ import java.util.concurrent.CompletableFuture;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
 @ExtendWith(MockitoExtension.class)
@@ -72,10 +71,12 @@ public class EmailControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string("Email successfully verified"));
     }
+
     @Test
     void testVerifyEmail_UserNotFound() throws Exception {
 
-        Mockito.doThrow(new UserNotFoundException(USER_ID)).when(emailService).verifyEmail(tokenValidationRequest);
+        Mockito.doThrow(new UserNotFoundException(USER_ID))
+                .when(emailService).verifyEmail(tokenValidationRequest);
 
         mockMvc.perform(post("/api/emails/verify-email")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -87,7 +88,8 @@ public class EmailControllerTest {
     @Test
     void testVerifyEmailTokenNotFound() throws Exception {
 
-        Mockito.doThrow(new TokenNotFoundException(TOKEN)).when(emailService).verifyEmail(tokenValidationRequest);
+        Mockito.doThrow(new TokenNotFoundException(TOKEN))
+                .when(emailService).verifyEmail(tokenValidationRequest);
 
         mockMvc.perform(post("/api/emails/verify-email")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -99,7 +101,8 @@ public class EmailControllerTest {
     @Test
     void testVerifyEmailTokenExpired() throws Exception {
 
-        Mockito.doThrow(new TokenExpiredException(TOKEN)).when(emailService).verifyEmail(tokenValidationRequest);
+        Mockito.doThrow(new TokenExpiredException(TOKEN))
+                .when(emailService).verifyEmail(tokenValidationRequest);
 
         mockMvc.perform(post("/api/emails/verify-email")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -111,7 +114,8 @@ public class EmailControllerTest {
     @Test
     void testVerifyEmailTokenAlreadyUsed() throws Exception {
 
-        Mockito.doThrow(new TokenAlreadyUsedException(TOKEN)).when(emailService).verifyEmail(tokenValidationRequest);
+        Mockito.doThrow(new TokenAlreadyUsedException(TOKEN))
+                .when(emailService).verifyEmail(tokenValidationRequest);
 
         mockMvc.perform(post("/api/emails/verify-email")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -123,7 +127,8 @@ public class EmailControllerTest {
     @Test
     void testVerifyEmailServiceUnavailable() throws Exception {
 
-        Mockito.doThrow(new ServiceUnavailableException("Service is currently unavailable")).when(emailService).verifyEmail(tokenValidationRequest);
+        Mockito.doThrow(new ServiceUnavailableException("Service is currently unavailable"))
+                .when(emailService).verifyEmail(tokenValidationRequest);
 
         mockMvc.perform(post("/api/emails/verify-email")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -133,7 +138,7 @@ public class EmailControllerTest {
     }
 
     @Test
-    void sendEmailSuccessful() throws Exception {
+    void testSendEmailSuccessful() throws Exception {
 
         Mockito.doReturn(CompletableFuture.completedFuture(null))
                 .when(emailService).sendSimpleEmail(emailRequest);
@@ -146,7 +151,7 @@ public class EmailControllerTest {
     }
 
     @Test
-    void sendEmailSendingFailedException() throws Exception {
+    void testSendEmailSendingFailedException() throws Exception {
 
         CompletableFuture<Void> failedFuture = CompletableFuture.failedFuture(new EmailSendingFailedException(EMAIL));
 
@@ -160,40 +165,54 @@ public class EmailControllerTest {
     }
 
     @Test
-    void sendVerificationEmailSuccess() throws Exception {
+    void testSendVerificationEmailSuccess() throws Exception {
 
-        Mockito.doNothing().when(emailService).sendVerificationEmail(emailVerificationRequest);
+        Mockito.doReturn(CompletableFuture.completedFuture(null))
+                .when(emailService).sendVerificationEmail(emailVerificationRequest);
 
         mockMvc.perform(post("/api/emails/send-verification")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(emailVerificationRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(emailVerificationRequest)))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Email Verification sent successfully"));
     }
 
     @Test
-    void sendVerificationEmailAlreadyVerified() throws Exception {
+    void testSendVerificationEmailAlreadyVerified() throws Exception {
 
         Mockito.doThrow(new EmailAlreadyVerifiedException())
                 .when(emailService).sendVerificationEmail(emailVerificationRequest);
 
         mockMvc.perform(post("/api/emails/send-verification")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(emailVerificationRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(emailVerificationRequest)))
                 .andExpect(status().isConflict())
                 .andExpect(content().string("Email already verified"));
     }
 
     @Test
-    void sendVerificationEmailTokenGenerationFailed() throws Exception {
+    void testSendVerificationEmailTokenGenerationFailed() throws Exception {
 
         Mockito.doThrow(new TokenGenerationException("Could not generate token"))
                 .when(emailService).sendVerificationEmail(emailVerificationRequest);
 
         mockMvc.perform(post("/api/emails/send-verification")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(tokenRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(tokenRequest)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("Could not generate token"));
+    }
+
+    @Test
+    void testSendVerificationEmailMailSendingFailed() throws Exception {
+
+        Mockito.doThrow(new EmailSendingFailedException(EMAIL))
+                .when(emailService).sendVerificationEmail(emailVerificationRequest);
+
+        mockMvc.perform(post("/api/emails/send-verification")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(emailVerificationRequest)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string("Failed to send email to " + EMAIL));
     }
 }
