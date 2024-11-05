@@ -24,6 +24,8 @@ import ua.lastbite.email_service.exception.token.TokenNotFoundException;
 import ua.lastbite.email_service.service.EmailService;
 import ua.lastbite.email_service.exception.*;
 
+import java.util.concurrent.CompletableFuture;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -133,7 +135,8 @@ public class EmailControllerTest {
     @Test
     void sendEmailSuccessful() throws Exception {
 
-        Mockito.doNothing().when(emailService).sendSimpleEmail(emailRequest);
+        Mockito.doReturn(CompletableFuture.completedFuture(null))
+                .when(emailService).sendSimpleEmail(emailRequest);
 
         mockMvc.perform(post("/api/emails/send")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -145,7 +148,9 @@ public class EmailControllerTest {
     @Test
     void sendEmailSendingFailedException() throws Exception {
 
-        Mockito.doThrow(new EmailSendingFailedException(EMAIL)).when(emailService).sendSimpleEmail(emailRequest);
+        CompletableFuture<Void> failedFuture = CompletableFuture.failedFuture(new EmailSendingFailedException(EMAIL));
+
+        Mockito.when(emailService.sendSimpleEmail(emailRequest)).thenReturn(failedFuture);
 
         mockMvc.perform(post("/api/emails/send")
                         .contentType(MediaType.APPLICATION_JSON)
