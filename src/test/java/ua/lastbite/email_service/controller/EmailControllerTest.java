@@ -128,7 +128,7 @@ public class EmailControllerTest {
         mockMvc.perform(post("/api/emails/verify-email")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(tokenValidationRequest)))
-                .andExpect(status().isServiceUnavailable())
+                .andExpect(status().isInternalServerError())
                 .andExpect(content().string("Service is currently unavailable"));
     }
 

@@ -56,10 +56,9 @@ public class EmailService {
 
         }).exceptionally(ex -> {
             LOGGER.error("Failed to send email: {}", ex.getMessage());
-            throw new EmailSendingFailedException("Failed to send email to " + request.getToEmail());
+            throw new EmailSendingFailedException(request.getToEmail());
         }).thenApply(v -> null);
     }
-
 
     public void sendVerificationEmail(EmailVerificationRequest request) {
         LOGGER.info("Processing email verification request.");
